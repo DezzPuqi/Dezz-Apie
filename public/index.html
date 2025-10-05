@@ -1,79 +1,120 @@
 <!doctype html>
-<html>
+<html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Bypass Botcahx — Dashboard</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sisa Limit Dezz</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:24px;background:#fff}
-    .card{max-width:720px;margin:20px auto;padding:18px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
-    h1{margin:0 0 8px;font-size:20px}
-    .big{font-size:28px;font-weight:700;margin:6px 0}
-    .muted{color:#666}
-    .btn{display:inline-block;padding:8px 14px;border-radius:8px;background:#ff4da6;color:#fff;text-decoration:none}
-    input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-top:8px}
-    .row{display:flex;gap:8px;align-items:center}
-    pre{background:#f7f7f8;padding:12px;border-radius:8px;overflow:auto}
+    * {margin:0;padding:0;box-sizing:border-box}
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background: #f4f6f8;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
+    }
+    .card {
+      background:#fff;
+      padding:32px 24px;
+      border-radius:16px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.08);
+      text-align:center;
+      max-width:400px;
+      width:90%;
+    }
+    h1 {
+      font-size:24px;
+      margin-bottom:24px;
+      color:#333;
+    }
+    .label {
+      font-size:14px;
+      color:#888;
+      margin-bottom:6px;
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+    }
+    .value {
+      font-size:32px;
+      font-weight:700;
+      color:#111;
+      margin-bottom:16px;
+    }
+    canvas {
+      margin-top:20px;
+    }
+    .footer {
+      font-size:12px;
+      color:#aaa;
+      margin-top:16px;
+    }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Bypass Botcahx — Dashboard</h1>
-    <div id="quotaArea">
-      <div class="muted">Sisa limit gua:</div>
-      <div id="quota" class="big">Loading...</div>
-      <div id="info" class="muted">Mau unlimited? Set QUOTA_PER_IP=0 (default = unlimited).</div>
-    </div>
+    <h1>Sisa Limit Punya Dezz</h1>
 
-    <hr />
+    <div class="label">Limit</div>
+    <div id="limit" class="value">Loading...</div>
 
-    <h2>Contoh pakai proxy</h2>
-    <div class="muted">Masukkan URL dari api.botcahx (apikey dikosongkan):</div>
-    <input id="inputUrl" type="text" placeholder="https://api.botcahx.eu.org/api/download/storyanime?apikey=" value="https://api.botcahx.eu.org/api/download/storyanime?apikey=" />
-    <div style="margin-top:8px;" class="row">
-      <a id="openBtn" class="btn" href="#" target="_blank">Buka via proxy</a>
-      <button id="copyBtn" class="btn" style="background:#333">Copy URL</button>
-    </div>
+    <div class="label">Today Hit</div>
+    <div id="todayHit" class="value">Loading...</div>
 
-    <p style="margin-top:12px" class="muted">Contoh endpoint proxy (ganti domain sesuai deploy):</p>
-    <pre id="example">https://YOUR_DOMAIN.vercel.app/api/botchax?url=https://api.botcahx.eu.org/api/download/storyanime?apikey=</pre>
+    <canvas id="chart" width="300" height="150"></canvas>
 
-    <p class="muted">Catatan: kalau QUOTA_PER_IP > 0, tiap IP punya kuota; kalau mau persistent gunakan Redis dan set REDIS_URL di env.</p>
+    <div class="footer">Data update otomatis tiap 10 detik</div>
   </div>
 
   <script>
-    async function loadUsage() {
+    let chart;
+
+    async function loadLimit() {
       try {
-        const r = await fetch('/api/usage');
-        const j = await r.json();
-        const el = document.getElementById('quota');
-        if (j.quota === 0) {
-          el.textContent = 'Unlimited';
+        const res = await fetch('/api/checklimit');
+        const data = await res.json();
+        const limit = data.limit ?? 0;
+        const today = data.todayHit ?? 0;
+
+        document.getElementById('limit').textContent = limit;
+        document.getElementById('todayHit').textContent = today;
+
+        // Update chart
+        if (!chart) {
+          const ctx = document.getElementById('chart').getContext('2d');
+          chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: ['TodayHit','Sisa Limit'],
+              datasets: [{
+                label: 'Penggunaan API',
+                data: [today, limit - today],
+                backgroundColor: ['#4caf50','#ddd'],
+                borderRadius: 6,
+              }]
+            },
+            options: {
+              responsive:true,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero:true }
+              }
+            }
+          });
         } else {
-          el.textContent = `${j.remaining} / ${j.quota} (dipakai: ${j.used})`;
+          chart.data.datasets[0].data = [today, limit - today];
+          chart.update();
         }
-      } catch (e) {
-        document.getElementById('quota').textContent = 'Error';
+      } catch(e) {
+        console.error(e);
+        document.getElementById('limit').textContent = 'Error';
+        document.getElementById('todayHit').textContent = 'Error';
       }
     }
 
-    document.getElementById('inputUrl').addEventListener('input', e => {
-      const v = encodeURIComponent(e.target.value);
-      document.getElementById('openBtn').href = `/api/botchax?url=${v}`;
-      document.getElementById('example').textContent = `${location.origin}/api/botchax?url=https://api.botcahx.eu.org/api/download/storyanime?apikey=`;
-    });
-
-    document.getElementById('copyBtn').addEventListener('click', async () => {
-      const v = `${location.origin}/api/botchax?url=${encodeURIComponent(document.getElementById('inputUrl').value)}`;
-      await navigator.clipboard.writeText(v);
-      alert('URL copied!');
-    });
-
-    // init
-    document.getElementById('openBtn').href = `/api/botchax?url=${encodeURIComponent(document.getElementById('inputUrl').value)}`;
-    loadUsage();
-    // refresh periodically
-    setInterval(loadUsage, 5000);
+    loadLimit();
+    setInterval(loadLimit, 10000);
   </script>
 </body>
-  </html>
+</html>
