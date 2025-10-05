@@ -1,233 +1,117 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sisa Limit Dezz — Dashboard</title>
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      background: linear-gradient(180deg,#f6f8fa 0%, #eef2f6 100%);
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:28px;
-    }
-    .wrap{
-      width:100%;
-      max-width:920px;
-      display:grid;
-      grid-template-columns: 1fr 360px;
-      gap:20px;
-      align-items:start;
-    }
-
-    /* Left card (info + chart) */
-    .card {
-      background:#ffffff;
-      border-radius:14px;
-      box-shadow:0 10px 30px rgba(19,24,31,0.06);
-      padding:22px;
-    }
-    h1{font-size:18px;color:#111;margin-bottom:8px}
-    .subtitle{color:#6b7280;font-size:13px;margin-bottom:18px}
-    .statRow{display:flex;gap:18px;align-items:center;margin-bottom:12px}
-    .stat{
-      flex:1;
-      background:#fafbfc;border-radius:10px;padding:12px;
-      text-align:center;
-      min-width:0;
-    }
-    .label{font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px}
-    .value{font-size:28px;font-weight:700;color:#0f172a;margin-top:6px}
-    .muted{font-size:13px;color:#6b7280;margin-top:6px}
-
-    /* Right card (bypass usage) */
-    .card-right{
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-    .input{width:100%;padding:10px;border-radius:10px;border:1px solid #e6e9ee}
-    .btn{
-      display:inline-block;padding:10px 12px;border-radius:10px;background:#0ea5e9;color:white;text-decoration:none;border:none;
-      cursor:pointer;font-weight:600;
-    }
-    .btn.secondary{background:#111827}
-    .row{display:flex;gap:8px}
-    .small{font-size:13px;color:#6b7280}
-
-    /* status */
-    .status{
-      display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;background:#eef2ff;color:#0369a1;
-      margin-left:8px;
-    }
-
-    canvas{max-width:100%}
-    pre{background:#0f172a;color:#fff;padding:12px;border-radius:8px;font-size:13px;overflow:auto}
-    code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,monospace;font-size:13px}
-
-    /* responsive */
-    @media (max-width:880px){
-      .wrap{grid-template-columns:1fr; padding:0 8px}
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sisa Limit Dezz</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    margin:0;
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    background:#f4f6f8;
+    display:flex;
+    justify-content:center;
+    padding:12px 0;
+  }
+  .card {
+    width:95%;
+    max-width:400px;
+    background:#fff;
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.06);
+    text-align:center;
+  }
+  h1{font-size:20px;color:#111;margin-bottom:10px;}
+  .stat{margin:12px 0;}
+  .label{font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;}
+  .value{font-size:28px;font-weight:700;color:#0f172a;}
+  #chart{margin-top:18px;}
+  .statusBox{
+    margin-top:10px;
+    font-weight:600;
+    padding:6px 12px;
+    border-radius:999px;
+    display:inline-block;
+    font-size:12px;
+    color:white;
+  }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- LEFT: Info + Chart -->
-    <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <h1>Sisa Limit Punya Dezz</h1>
-          <div class="subtitle">Ringkasan singkat penggunaan API (diambil dari checkkey)</div>
-        </div>
-        <div id="statusBox" class="small muted">Status: <span id="statusText">Loading</span></div>
-      </div>
 
-      <div style="margin-top:14px" class="statRow">
-        <div class="stat">
-          <div class="label">Limit</div>
-          <div id="limit" class="value">—</div>
-          <div class="muted">Total limit yang tersedia</div>
-        </div>
-        <div class="stat">
-          <div class="label">Today Hit</div>
-          <div id="todayHit" class="value">—</div>
-          <div class="muted">Pemakaian hari ini</div>
-        </div>
-      </div>
-
-      <div style="margin-top:12px">
-        <canvas id="chart" height="120"></canvas>
-      </div>
-
-      <div style="margin-top:14px" class="small muted">Update otomatis setiap 10 detik — jika data tidak muncul, cek deploy & environment variable <code>BOTCAHX_KEY</code>.</div>
-    </div>
-
-    <!-- RIGHT: Bypass usage -->
-    <div class="card card-right">
-      <div>
-        <div style="font-weight:700;margin-bottom:6px">Gunakan Bypass (Contoh)</div>
-        <div class="small">Masukkan URL target dari <code>api.botcahx.eu.org</code> dengan parameter <code>?apikey=</code> dikosongkan.</div>
-      </div>
-
-      <input id="targetUrl" class="input" type="text" value="https://api.botcahx.eu.org/api/download/storyanime?apikey=" />
-
-      <div class="row">
-        <button id="openBtn" class="btn">Buka via Proxy</button>
-        <button id="copyBtn" class="btn secondary">Copy URL Proxy</button>
-      </div>
-
-      <div>
-        <div style="font-weight:700;margin-top:6px">Cara pakai (curl)</div>
-        <pre id="curlExample">curl "https://YOUR_DOMAIN.vercel.app/api/botchax?url=https://api.botcahx.eu.org/api/download/storyanime?apikey="</pre>
-      </div>
-
-      <div>
-        <div style="font-weight:700;margin-top:6px">Cara pakai (JS fetch)</div>
-        <pre><code>fetch('/api/botchax?url=' + encodeURIComponent('https://api.botcahx.eu.org/api/download/storyanime?apikey='))
-  .then(r=>r.blob()).then(b=>{/* handle file */})</code></pre>
-      </div>
-
-      <div class="small muted">Pastikan <code>api/botchax.js</code> ada dan domain diganti sesuai deploy. Jika proxy tidak jalan, cek console & Vercel logs.</div>
-    </div>
+<div class="card">
+  <h1>Sisa Limit Punya Dezz</h1>
+  <div class="stat">
+    <div class="label">Limit</div>
+    <div id="limit" class="value">—</div>
   </div>
+  <div class="stat">
+    <div class="label">Today Hit</div>
+    <div id="todayHit" class="value">—</div>
+  </div>
+  <canvas id="chart" height="120"></canvas>
+  <div id="statusBox" class="statusBox">Loading...</div>
+</div>
 
-  <script>
-    // helper
-    const $ = id => document.getElementById(id);
+<script>
+const $ = id => document.getElementById(id);
+let chart;
 
-    // Chart setup
-    const ctx = $('chart').getContext('2d');
-    const chart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Today Hit', 'Sisa Limit'],
-        datasets: [{
-          label: 'Penggunaan',
-          data: [0,0],
-          backgroundColor: ['#0ea5e9', '#cbd5e1'],
-          borderRadius: 6
-        }]
-      },
-      options: {
-        plugins: { legend: { display:false } },
-        scales: {
-          y: { beginAtZero: true, ticks:{precision:0} }
+function setStatus(text,color){
+  $.statusBox.textContent = text;
+  $.statusBox.style.backgroundColor = color;
+}
+
+async function loadLimit(){
+  try{
+    const res = await fetch('https://dezz-apie.vercel.app/api/checkkey',{cache:'no-store'});
+    if(res.status===200){
+      setStatus('200 OK','green');
+    } else if(res.status>=500){
+      setStatus(res.status+' Server Error','red');
+    } else{
+      setStatus(res.status+' Error','orange');
+    }
+    const data = await res.json();
+    const limit = Number.isFinite(data.result.limit)?data.result.limit:0;
+    const today = Number.isFinite(data.result.todayHit)?data.result.todayHit:0;
+    const remaining = Math.max(0,limit-today);
+
+    $.limit.textContent = limit.toLocaleString('id');
+    $.todayHit.textContent = today.toLocaleString('id');
+
+    if(!chart){
+      const ctx = $.chart.getContext('2d');
+      chart = new Chart(ctx,{
+        type:'bar',
+        data:{
+          labels:['TodayHit','Sisa Limit'],
+          datasets:[{
+            data:[today,remaining],
+            backgroundColor:['#0ea5e9','#cbd5e1'],
+            borderRadius:6
+          }]
         },
-        maintainAspectRatio:false
-      }
-    });
-
-    async function fetchLimit() {
-      try {
-        $('statusText').textContent = 'Mengambil...';
-        const res = await fetch('/api/checklimit', {cache: 'no-store'});
-        if (!res.ok) {
-          $('statusText').textContent = `Upstream ${res.status}`;
-          // graceful fallback: don't replace numbers with "Error", just leave previous or show dash
-          return;
+        options:{
+          plugins:{legend:{display:false}},
+          scales:{y:{beginAtZero:true,ticks:{precision:0}}},
+          maintainAspectRatio:false
         }
-        const j = await res.json();
-        // normalize numbers
-        const limit = Number.isFinite(j.limit) ? Number(j.limit) : 0;
-        const today = Number.isFinite(j.todayHit) ? Number(j.todayHit) : 0;
-        const remaining = Math.max(0, limit - today);
-
-        // update UI
-        $('limit').textContent = limit.toLocaleString('id');
-        $('todayHit').textContent = today.toLocaleString('id');
-
-        // chart update (show today & remaining)
-        chart.data.datasets[0].data = [today, remaining];
-        chart.update();
-
-        $('statusText').textContent = 'OK';
-      } catch (err) {
-        console.error('fetchLimit error', err);
-        // keep existing values, update status
-        $('statusText').textContent = 'Gagal ambil data';
-      }
+      });
+    } else{
+      chart.data.datasets[0].data = [today,remaining];
+      chart.update();
     }
+  } catch(e){
+    setStatus('Jaringan Error','orange');
+  }
+}
 
-    // initial load + interval
-    fetchLimit();
-    setInterval(fetchLimit, 10000);
+loadLimit();
+setInterval(loadLimit,10000);
+</script>
 
-    // Bypass buttons
-    function getProxyUrl(inputUrl) {
-      // encode whole url
-      return `${location.origin}/api/botchax?url=${encodeURIComponent(inputUrl)}`;
-    }
-
-    $('openBtn').addEventListener('click', (e) => {
-      const u = $('targetUrl').value.trim();
-      if (!u) return alert('Masukkan URL target dulu');
-      window.open(getProxyUrl(u), '_blank');
-    });
-
-    $('copyBtn').addEventListener('click', async () => {
-      const u = $('targetUrl').value.trim();
-      const proxy = getProxyUrl(u);
-      try {
-        await navigator.clipboard.writeText(proxy);
-        alert('URL proxy disalin ke clipboard');
-        // update curl example shown
-        $('curlExample').textContent = `curl "${proxy}"`;
-      } catch (e) {
-        alert('Gagal salin: ' + e);
-      }
-    });
-
-    // init curl example with default
-    $('curlExample').textContent = `curl "${getProxyUrl($('targetUrl').value)}"`;
-  </script>
 </body>
-        </html>
+</html>
