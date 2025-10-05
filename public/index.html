@@ -6,7 +6,7 @@
 <title>Sisa Limit Dezz — Mobile</title>
 <style>
   :root{
-    --bg:#f4f6f8; --card:#fff; --muted:#6b7280; --primary:#0ea5e9; --dark:#0f172a;
+    --bg:#f5f7fa; --card:#fff; --muted:#6b7280; --primary:#0ea5e9; --dark:#0f172a;
     --success:#16a34a; --error:#dc2626; --warn:#f59e0b; --glass:rgba(15,23,42,0.04);
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -37,6 +37,8 @@
   .responseMeta{display:flex;gap:8px;align-items:center;margin-bottom:8px}
   .statusChip{padding:6px 10px;border-radius:999px;font-weight:700;color:#fff;font-size:13px}
   .small{font-size:12px;color:var(--muted)}
+  .tutorial{margin-top:12px;border-radius:10px;padding:12px;background:#fbfdff;font-size:13px;color:var(--muted)}
+  code{background:#eef2f6;padding:2px 6px;border-radius:6px}
   @media (min-width:700px){body{padding:24px}.card{max-width:420px}}
 </style>
 </head>
@@ -62,10 +64,10 @@
       </div>
     </div>
 
-    <div class="hint">Data diambil langsung dari server (update otomatis setiap 10 detik)</div>
+    <div class="hint">Auto-refresh setiap 10 detik — data diambil aman dari server (API key tidak pernah dikirim ke browser).</div>
 
     <div class="try-title">TRY OUT — Tes Bypass Sekarang</div>
-    <div class="small">Masukkan URL target dari <code>api.botcahx.eu.org</code> dengan <code>?apikey=</code> dikosongkan.</div>
+    <div class="small">Isi URL target (kosongkan <code>?apikey=</code>), lalu tekan <strong>Tes Bypass</strong>.</div>
 
     <input id="targetUrl" class="input" type="text" value="https://api.botcahx.eu.org/api/download/storyanime?apikey=" />
 
@@ -74,7 +76,7 @@
       <button id="copyBtn" class="btn ghost">Salin URL Proxy</button>
     </div>
 
-    <div id="curlSnip" class="small" style="margin-top:10px">Contoh curl akan muncul di bawah setelah menyalin / tes.</div>
+    <div id="curlSnip" class="small" style="margin-top:10px">Contoh curl akan muncul di bawah setelah tes / salin.</div>
 
     <div id="responseArea" style="display:none">
       <div class="responseMeta" style="margin-top:12px">
@@ -83,19 +85,27 @@
       </div>
       <div id="respBody" class="responseBox">Menunggu percobaan...</div>
     </div>
+
+    <div class="tutorial">
+      <div style="font-weight:700;margin-bottom:6px">Tutorial Singkat (WAJIB — jangan publish API key)</div>
+      <ol style="padding-left:18px">
+        <li>Siapkan project di Vercel dan taruh file `public/index.html` ini serta dua serverless file di folder <code>/api</code> (lihat bawah).</li>
+        <li>Tambahkan Environment Variable di Vercel: <code>BOTCAHX_KEY</code> = <em>(API key Anda)</em>. <strong>JANGAN</strong> commit key ke git.</li>
+        <li>Deploy project. Halaman akan otomatis panggil <code>/api/checkkey</code> dan <code>/api/botchax</code> (proxy).</li>
+        <li>Untuk publik: API key selalu disimpan di env server; halaman **tidak** menampilkan atau mengirimkan apikey ke client.</li>
+      </ol>
+    </div>
   </div>
 
 <script>
-  // --- Config & endpoints (sesuaikan kalau perlu) ---
-  const CHECK_KEY_URL = 'https://dezz-apie.vercel.app/api/checkkey'; // user's checkkey API
-  const PROXY_PATH = '/api/botchax'; // same-origin proxy path (serverless); ensure exists
+  const CHECK_KEY_URL = '/api/checkkey'; // serverless endpoint (same-origin is ideal)
+  const PROXY_PATH = '/api/botchax'; // proxy serverless (same-origin)
 
-  // --- Helpers ---
   const $ = id => document.getElementById(id);
   function colorForStatus(code){
     if(code === 200) return 'var(--success)';
     if(code >= 500) return 'var(--error)';
-    return 'var(--warn)'; // other errors
+    return 'var(--warn)';
   }
   function safeNumber(v){
     if (typeof v === 'number' && Number.isFinite(v)) return v;
@@ -103,163 +113,85 @@
     return 0;
   }
 
-  // --- Show client IP ---
+  // IP
   async function loadClientIp(){
     try{
       const r = await fetch('https://api.ipify.org?format=json');
-      if(r.ok){
-        const j = await r.json();
-        $('userIp').textContent = 'IP: ' + (j.ip || '—');
-      } else {
-        $('userIp').textContent = 'IP: —';
-      }
-    } catch(e){
-      $('userIp').textContent = 'IP: —';
-    }
+      if(r.ok){ const j = await r.json(); $('userIp').textContent = 'IP: ' + (j.ip || '—'); }
+    }catch(e){ $('userIp').textContent = 'IP: —'; }
   }
+  // Battery
+  async function loadBattery(){ try{
+    if(navigator.getBattery){ const b = await navigator.getBattery();
+      const upd = ()=> $('batInfo').textContent = 'Battery: ' + Math.round(b.level*100) + '%' + (b.charging ? ' (Charging)' : '');
+      upd(); b.addEventListener('levelchange', upd); b.addEventListener('chargingchange', upd);
+    } else $('batInfo').textContent = 'Battery: —';
+  } catch(e){ $('batInfo').textContent = 'Battery: —'; } }
 
-  // --- Battery info ---
-  async function loadBattery(){
-    try{
-      if(navigator.getBattery){
-        const b = await navigator.getBattery();
-        function updateBat(){
-          const pct = Math.round(b.level * 100);
-          const charging = b.charging ? ' (Charging)' : '';
-          $('batInfo').textContent = `Battery: ${pct}%${charging}`;
-        }
-        updateBat();
-        b.addEventListener('levelchange', updateBat);
-        b.addEventListener('chargingchange', updateBat);
-      } else {
-        $('batInfo').textContent = 'Battery: —';
-      }
-    } catch(e){
-      $('batInfo').textContent = 'Battery: —';
-    }
-  }
-
-  // --- Fetch limit & todayHit robustly ---
   async function fetchLimit(){
     try{
-      $('checkStatus').textContent = 'Mengambil...';
-      $('checkStatus').style.background = 'var(--warn)';
+      $('checkStatus').textContent = 'Mengambil...'; $('checkStatus').style.background = 'var(--warn)';
       const res = await fetch(CHECK_KEY_URL, {cache:'no-store'});
-      // status badge
-      $('checkStatus').textContent = res.status + ' ' + (res.status === 200 ? 'OK' : (res.status >=500 ? 'Server' : 'Error'));
+      $('checkStatus').textContent = res.status + ' ' + (res.status===200 ? 'OK' : (res.status>=500 ? 'Server' : 'Error'));
       $('checkStatus').style.background = colorForStatus(res.status);
-
-      if(!res.ok){
-        // keep previous numbers intact; don't overwrite with 0
-        return;
-      }
-
+      if(!res.ok) return; // jangan timpa angka jika error
       const j = await res.json();
-
-      // tolerate multiple shapes: { result: { limit, todayHit } } or { limit, todayHit } or nested strings
+      // Support shapes: { result: {limit,todayHit} } or { limit,todayHit } 
       let result = j;
       if(j && typeof j === 'object' && 'result' in j && j.result && typeof j.result === 'object') result = j.result;
-
-      const limitRaw = result.limit ?? j.limit ?? 0;
-      const todayRaw = result.todayHit ?? j.todayHit ?? result.today ?? 0;
-
-      const limit = safeNumber(limitRaw);
-      const today = safeNumber(todayRaw);
-
+      const limit = safeNumber(result.limit ?? j.limit ?? 0);
+      const today = safeNumber(result.todayHit ?? j.todayHit ?? 0);
       $('limit').textContent = limit.toLocaleString('id');
       $('todayHit').textContent = today.toLocaleString('id');
     } catch(err){
-      // network error
-      $('checkStatus').textContent = 'Jaringan Error';
-      $('checkStatus').style.background = 'var(--warn)';
-      console.warn('fetchLimit error', err);
-      // do not overwrite numbers
+      $('checkStatus').textContent = 'Jaringan Error'; $('checkStatus').style.background = 'var(--warn)';
+      console.warn('fetchLimit err', err);
     }
   }
 
-  // --- TRY OUT: make bypass request and show response ---
-  function getProxyUrl(target){
-    return `${location.origin}${PROXY_PATH}?url=${encodeURIComponent(target)}`;
-  }
-
+  // TRY OUT
+  function getProxyUrl(target){ return `${location.origin}${PROXY_PATH}?url=${encodeURIComponent(target)}`; }
   async function tryBypass(){
-    const target = $('targetUrl').value.trim();
-    if(!target){
-      alert('Masukkan URL target terlebih dahulu.');
-      return;
-    }
+    const target = $('targetUrl').value.trim(); if(!target) return alert('Masukkan URL target dulu');
     const proxy = getProxyUrl(target);
     $('responseArea').style.display = 'block';
-    $('respStatus').textContent = 'Mengirim...';
-    $('respStatus').style.background = 'var(--warn)';
-    $('respInfo').textContent = proxy;
-    $('respBody').textContent = 'Menunggu response...';
-
-    try{
+    $('respStatus').textContent = 'Mengirim...'; $('respStatus').style.background = 'var(--warn)';
+    $('respInfo').textContent = proxy; $('respBody').textContent = 'Menunggu response...';
+    try {
       const res = await fetch(proxy);
-      // show status color
-      $('respStatus').textContent = res.status + ' ' + (res.status === 200 ? 'OK' : (res.status >=500 ? 'Server' : 'Error'));
+      $('respStatus').textContent = res.status + ' ' + (res.status===200 ? 'OK' : (res.status>=500 ? 'Server' : 'Error'));
       $('respStatus').style.background = colorForStatus(res.status);
-
-      // try parse as JSON
       const ct = res.headers.get('content-type') || '';
       if(ct.includes('application/json')){
-        const j = await res.json();
-        $('respBody').textContent = JSON.stringify(j, null, 2);
-        // update curl snippet
-        $('curlSnip').textContent = `curl "${proxy}"`;
-      } else if(ct.startsWith('text/') || ct.includes('application/xml') || ct.includes('html')){
-        const txt = await res.text();
-        // limit displayed length to keep mobile friendly
-        const max = 2000;
-        $('respBody').textContent = txt.length > max ? txt.slice(0, max) + '\n\n...(truncated)' : txt;
-        $('curlSnip').textContent = `curl "${proxy}"`;
+        const j = await res.json(); $('respBody').textContent = JSON.stringify(j, null, 2);
+      } else if(ct.startsWith('text/') || ct.includes('html') || ct.includes('xml')){
+        const txt = await res.text(); $('respBody').textContent = txt.length>2000 ? txt.slice(0,2000)+'\n\n...(truncated)' : txt;
       } else {
-        // binary / file - show info
-        const blob = await res.blob();
-        const sizeKB = Math.round((blob.size||0)/1024);
-        $('respBody').textContent = `Response is binary/file — type: ${blob.type || 'unknown'}, size: ${sizeKB} KB\n\n(Use curl or open in new tab to download)`;
-        $('curlSnip').textContent = `curl -L "${proxy}" --output output.bin`;
+        const blob = await res.blob(); const sizeKB = Math.round((blob.size||0)/1024);
+        $('respBody').textContent = `Binary/file — type: ${blob.type||'unknown'}, size: ${sizeKB} KB\nGunakan curl untuk download.`;
       }
-    } catch(err){
-      $('respStatus').textContent = 'Jaringan Error';
-      $('respStatus').style.background = 'var(--warn)';
-      $('respInfo').textContent = err.message || 'Fetch error';
-      $('respBody').textContent = 'Gagal menghubungi proxy. Pastikan endpoint /api/botchax tersedia dan domain sama origin (atau CORS diperbolehkan).';
-      console.warn('tryBypass error', err);
+      $('curlSnip').textContent = `curl "${proxy}"`;
+    } catch(e){
+      $('respStatus').textContent = 'Jaringan Error'; $('respStatus').style.background = 'var(--warn)';
+      $('respInfo').textContent = e.message || 'Fetch error';
+      $('respBody').textContent = 'Gagal menghubungi proxy. Pastikan serverless /api/botchax tersedia.';
+      console.warn('tryBypass err', e);
     }
   }
-
-  // --- Copy proxy URL ---
   function copyProxyUrl(){
-    const target = $('targetUrl').value.trim();
-    if(!target) return alert('Masukkan URL target dulu');
+    const target = $('targetUrl').value.trim(); if(!target) return alert('Masukkan URL target dulu');
     const proxy = getProxyUrl(target);
     navigator.clipboard.writeText(proxy).then(()=>{
-      // update curl snippet
       $('curlSnip').textContent = `curl "${proxy}"`;
-      alert('URL proxy disalin ke clipboard');
-    }).catch(e=>{
-      alert('Gagal menyalin: ' + e);
-    });
+      alert('URL proxy disalin');
+    }).catch(e=>alert('Gagal salin: '+e));
   }
 
-  // --- Init ---
-  loadClientIp();
-  loadBattery();
-  fetchLimit();
-  setInterval(fetchLimit, 10000);
-
-  // events
+  // init
+  loadClientIp(); loadBattery(); fetchLimit(); setInterval(fetchLimit,10000);
   $('testBtn').addEventListener('click', tryBypass);
   $('copyBtn').addEventListener('click', copyProxyUrl);
-
-  // live update curl snippet on input change
-  $('targetUrl').addEventListener('input', ()=>{
-    const v = $('targetUrl').value.trim() || 'https://api.botcahx.eu.org/api/download/storyanime?apikey=';
-    $('curlSnip').textContent = `curl "${getProxyUrl(v)}"`;
-  });
+  $('targetUrl').addEventListener('input', ()=>{ const v=$('targetUrl').value.trim()||'https://api.botcahx.eu.org/api/download/storyanime?apikey='; $('curlSnip').textContent = `curl "${getProxyUrl(v)}"`; });
 </script>
-
 </body>
 </html>
