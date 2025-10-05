@@ -6,216 +6,260 @@
 <title>Sisa Limit Dezz — Mobile</title>
 <style>
   :root{
-    --bg:#f4f6f8;
-    --card:#ffffff;
-    --muted:#6b7280;
-    --primary:#0ea5e9;
-    --dark:#0f172a;
-    --success:#16a34a;
-    --error:#dc2626;
-    --warn:#f59e0b;
+    --bg:#f4f6f8; --card:#fff; --muted:#6b7280; --primary:#0ea5e9; --dark:#0f172a;
+    --success:#16a34a; --error:#dc2626; --warn:#f59e0b; --glass:rgba(15,23,42,0.04);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
     font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-    background:var(--bg);
-    padding:14px;
-    -webkit-font-smoothing:antialiased;
+    background:var(--bg); padding:14px; -webkit-font-smoothing:antialiased;
   }
-
-  /* Container mobile-first */
-  .card{
-    width:100%;
-    max-width:420px;
-    margin:0 auto 12px auto;
-    background:var(--card);
-    border-radius:12px;
-    box-shadow:0 10px 24px rgba(2,6,23,0.06);
-    padding:16px;
-  }
-
-  h1{font-size:18px;color:var(--dark);margin-bottom:8px}
-  .subtitle{font-size:13px;color:var(--muted);margin-bottom:14px}
-
-  .stat{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:12px;
-    border-radius:10px;
-    background:#fbfdff;
-    margin-bottom:10px;
-  }
-  .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px}
-  .value{font-size:22px;font-weight:700;color:var(--dark)}
-
-  .statusBox{
-    display:inline-block;padding:8px 12px;border-radius:999px;font-size:13px;color:#fff;font-weight:700;
-    margin-top:8px;
-  }
-
-  /* Try out area */
-  .try-title{font-weight:700;margin-top:6px;margin-bottom:6px;color:var(--dark)}
+  .card{width:100%;max-width:420px;margin:10px auto;background:var(--card);border-radius:12px;
+    box-shadow:0 10px 24px rgba(2,6,23,0.06);padding:14px}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .meta{display:flex;flex-direction:column}
+  .ip{font-weight:700;color:var(--dark);font-size:14px}
+  .sub{font-size:12px;color:var(--muted)}
+  .badge{padding:6px 10px;border-radius:999px;font-weight:700;color:#fff;font-size:12px}
+  .stat-row{display:flex;gap:10px;margin-top:8px}
+  .stat{flex:1;background:var(--glass);padding:12px;border-radius:10px;text-align:center}
+  .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px}
+  .value{font-size:20px;font-weight:800;color:var(--dark);margin-top:6px}
+  .hint{font-size:12px;color:var(--muted);margin-top:10px}
+  /* try out */
+  .try-title{font-weight:800;margin-top:10px;margin-bottom:6px;color:var(--dark)}
   .input{width:100%;padding:12px;border-radius:10px;border:1px solid #e6edf3;font-size:14px;margin-bottom:10px}
   .row{display:flex;gap:8px}
-  .btn{
-    flex:1;padding:10px;border-radius:10px;border:0;background:var(--primary);color:#fff;font-weight:700;
-    font-size:14px;cursor:pointer;
-  }
+  .btn{flex:1;padding:10px;border-radius:10px;border:0;background:var(--primary);color:#fff;font-weight:700;font-size:14px;cursor:pointer}
   .btn.ghost{background:#111827}
-  .small{font-size:13px;color:var(--muted);margin-top:8px}
-
-  pre.snip{
-    background:#0f172a;color:#fff;padding:10px;border-radius:8px;font-size:13px;overflow-x:auto;margin-top:10px;
-  }
-
-  .hint{font-size:13px;color:var(--muted);margin-top:10px}
-
-  /* tiny responsive tweaks */
-  @media (min-width:700px){
-    body{padding:24px}
-    .card{max-width:420px}
-  }
+  pre.snip{background:#0f172a;color:#fff;padding:10px;border-radius:8px;font-size:13px;overflow-x:auto;margin-top:10px}
+  .responseBox{margin-top:12px;border-radius:10px;padding:12px;background:#0b1220;color:#fff;font-size:13px;white-space:pre-wrap;word-break:break-word}
+  .responseMeta{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .statusChip{padding:6px 10px;border-radius:999px;font-weight:700;color:#fff;font-size:13px}
+  .small{font-size:12px;color:var(--muted)}
+  @media (min-width:700px){body{padding:24px}.card{max-width:420px}}
 </style>
 </head>
 <body>
 
   <div class="card" id="mainCard">
-    <h1>Sisa Limit Punya Dezz</h1>
-    <div class="subtitle">Ringkasan singkat — data terbaru dari server</div>
+    <header>
+      <div class="meta">
+        <div class="ip" id="userIp">IP: —</div>
+        <div class="sub" id="batInfo">Battery: —</div>
+      </div>
+      <div id="checkStatus" class="badge" style="background:var(--warn)">Loading...</div>
+    </header>
 
-    <div class="stat">
-      <div>
+    <div class="stat-row">
+      <div class="stat">
         <div class="label">Limit</div>
         <div id="limit" class="value">—</div>
       </div>
-      <div>
+      <div class="stat">
         <div class="label">Today Hit</div>
         <div id="todayHit" class="value">—</div>
       </div>
     </div>
 
-    <div id="statusBox" class="statusBox" style="background:var(--warn);">Mengambil...</div>
+    <div class="hint">Data diambil langsung dari server (update otomatis setiap 10 detik)</div>
 
-    <div class="hint">Auto-refresh setiap 10 detik. Untuk publik — tampil sederhana & fokus.</div>
-  </div>
-
-  <!-- TRY OUT card -->
-  <div class="card">
     <div class="try-title">TRY OUT — Tes Bypass Sekarang</div>
-    <div class="small">Isi URL target dari <code>api.botcahx.eu.org</code> dengan <code>?apikey=</code> dikosongkan.</div>
+    <div class="small">Masukkan URL target dari <code>api.botcahx.eu.org</code> dengan <code>?apikey=</code> dikosongkan.</div>
 
     <input id="targetUrl" class="input" type="text" value="https://api.botcahx.eu.org/api/download/storyanime?apikey=" />
 
     <div class="row" style="margin-top:6px">
-      <button id="openBtn" class="btn">Buka via Proxy</button>
+      <button id="testBtn" class="btn">Tes Bypass</button>
       <button id="copyBtn" class="btn ghost">Salin URL Proxy</button>
     </div>
 
-    <div class="small" style="margin-top:8px">Contoh perintah curl yang otomatis ter-generate:</div>
-    <pre id="curlBox" class="snip">curl "https://YOUR_DOMAIN.vercel.app/api/botchax?url=https://api.botcahx.eu.org/api/download/storyanime?apikey="</pre>
+    <div id="curlSnip" class="small" style="margin-top:10px">Contoh curl akan muncul di bawah setelah menyalin / tes.</div>
 
-    <div class="small" style="margin-top:8px">Contoh pemakaian JavaScript (fetch):</div>
-    <pre id="fetchBox" class="snip">fetch('/api/botchax?url=' + encodeURIComponent('https://api.botcahx.eu.org/api/download/storyanime?apikey='))
-  .then(r => r.blob())
-  .then(blob => { /* handle file */ })</pre>
-
-    <div class="hint">Tekan <strong>Buka via Proxy</strong> untuk membuka hasil lewat proxy di tab baru. Tombol Salin menyalin URL proxy untuk dipakai di terminal atau aplikasi.</div>
+    <div id="responseArea" style="display:none">
+      <div class="responseMeta" style="margin-top:12px">
+        <div id="respStatus" class="statusChip" style="background:var(--warn)">—</div>
+        <div class="small" id="respInfo">—</div>
+      </div>
+      <div id="respBody" class="responseBox">Menunggu percobaan...</div>
+    </div>
   </div>
 
 <script>
-  // Helpers
-  const $ = id => document.getElementById(id);
-  const CHECK_URL = 'https://dezz-apie.vercel.app/api/checkkey'; // sesuai request user
+  // --- Config & endpoints (sesuaikan kalau perlu) ---
+  const CHECK_KEY_URL = 'https://dezz-apie.vercel.app/api/checkkey'; // user's checkkey API
+  const PROXY_PATH = '/api/botchax'; // same-origin proxy path (serverless); ensure exists
 
-  // Status color helper
-  function setStatus(text, type){
-    const box = $('statusBox');
-    box.textContent = text;
-    if(type === 'ok') box.style.backgroundColor = 'var(--success)';
-    else if(type === 'server') box.style.backgroundColor = 'var(--error)';
-    else if(type === 'network') box.style.backgroundColor = 'var(--warn)';
-    else box.style.backgroundColor = 'var(--warn)';
+  // --- Helpers ---
+  const $ = id => document.getElementById(id);
+  function colorForStatus(code){
+    if(code === 200) return 'var(--success)';
+    if(code >= 500) return 'var(--error)';
+    return 'var(--warn)'; // other errors
+  }
+  function safeNumber(v){
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string' && /^\d+$/.test(v)) return parseInt(v,10);
+    return 0;
   }
 
-  // Fetch and update
-  async function updateLimit(){
+  // --- Show client IP ---
+  async function loadClientIp(){
     try{
-      setStatus('Mengambil...', 'loading');
-      const res = await fetch(CHECK_URL, {cache:'no-store', method:'GET'});
-      if(res.status === 200){
-        setStatus('200 OK', 'ok');
-      } else if(res.status >= 500){
-        setStatus(res.status + ' Server Error', 'server');
+      const r = await fetch('https://api.ipify.org?format=json');
+      if(r.ok){
+        const j = await r.json();
+        $('userIp').textContent = 'IP: ' + (j.ip || '—');
       } else {
-        setStatus(res.status + ' Error', 'network');
+        $('userIp').textContent = 'IP: —';
       }
-      // parse json safely
+    } catch(e){
+      $('userIp').textContent = 'IP: —';
+    }
+  }
+
+  // --- Battery info ---
+  async function loadBattery(){
+    try{
+      if(navigator.getBattery){
+        const b = await navigator.getBattery();
+        function updateBat(){
+          const pct = Math.round(b.level * 100);
+          const charging = b.charging ? ' (Charging)' : '';
+          $('batInfo').textContent = `Battery: ${pct}%${charging}`;
+        }
+        updateBat();
+        b.addEventListener('levelchange', updateBat);
+        b.addEventListener('chargingchange', updateBat);
+      } else {
+        $('batInfo').textContent = 'Battery: —';
+      }
+    } catch(e){
+      $('batInfo').textContent = 'Battery: —';
+    }
+  }
+
+  // --- Fetch limit & todayHit robustly ---
+  async function fetchLimit(){
+    try{
+      $('checkStatus').textContent = 'Mengambil...';
+      $('checkStatus').style.background = 'var(--warn)';
+      const res = await fetch(CHECK_KEY_URL, {cache:'no-store'});
+      // status badge
+      $('checkStatus').textContent = res.status + ' ' + (res.status === 200 ? 'OK' : (res.status >=500 ? 'Server' : 'Error'));
+      $('checkStatus').style.background = colorForStatus(res.status);
+
+      if(!res.ok){
+        // keep previous numbers intact; don't overwrite with 0
+        return;
+      }
+
       const j = await res.json();
-      const result = j.result || {};
-      const limit = Number.isFinite(result.limit) ? result.limit : (parseInt(result.limit) || 0);
-      const today = Number.isFinite(result.todayHit) ? result.todayHit : (parseInt(result.todayHit) || 0);
+
+      // tolerate multiple shapes: { result: { limit, todayHit } } or { limit, todayHit } or nested strings
+      let result = j;
+      if(j && typeof j === 'object' && 'result' in j && j.result && typeof j.result === 'object') result = j.result;
+
+      const limitRaw = result.limit ?? j.limit ?? 0;
+      const todayRaw = result.todayHit ?? j.todayHit ?? result.today ?? 0;
+
+      const limit = safeNumber(limitRaw);
+      const today = safeNumber(todayRaw);
 
       $('limit').textContent = limit.toLocaleString('id');
       $('todayHit').textContent = today.toLocaleString('id');
     } catch(err){
-      // jaringan / timeout
-      setStatus('Jaringan Error', 'network');
-      // don't overwrite numbers — keep previous or dash
-      if(!$('limit').textContent || $('limit').textContent === '—') {
-        $('limit').textContent = '—';
-      }
-      if(!$('todayHit').textContent || $('todayHit').textContent === '—') {
-        $('todayHit').textContent = '—';
-      }
-      console.warn('updateLimit error', err);
+      // network error
+      $('checkStatus').textContent = 'Jaringan Error';
+      $('checkStatus').style.background = 'var(--warn)';
+      console.warn('fetchLimit error', err);
+      // do not overwrite numbers
     }
   }
 
-  // init & interval
-  updateLimit();
-  setInterval(updateLimit, 10000);
-
-  // TRY OUT actions
-  function getProxyUrl(input) {
-    return `${location.origin}/api/botchax?url=${encodeURIComponent(input)}`;
+  // --- TRY OUT: make bypass request and show response ---
+  function getProxyUrl(target){
+    return `${location.origin}${PROXY_PATH}?url=${encodeURIComponent(target)}`;
   }
 
-  $('openBtn').addEventListener('click', () => {
+  async function tryBypass(){
     const target = $('targetUrl').value.trim();
-    if(!target) return alert('Masukkan URL target dulu');
+    if(!target){
+      alert('Masukkan URL target terlebih dahulu.');
+      return;
+    }
     const proxy = getProxyUrl(target);
-    window.open(proxy, '_blank');
-  });
+    $('responseArea').style.display = 'block';
+    $('respStatus').textContent = 'Mengirim...';
+    $('respStatus').style.background = 'var(--warn)';
+    $('respInfo').textContent = proxy;
+    $('respBody').textContent = 'Menunggu response...';
 
-  $('copyBtn').addEventListener('click', async () => {
+    try{
+      const res = await fetch(proxy);
+      // show status color
+      $('respStatus').textContent = res.status + ' ' + (res.status === 200 ? 'OK' : (res.status >=500 ? 'Server' : 'Error'));
+      $('respStatus').style.background = colorForStatus(res.status);
+
+      // try parse as JSON
+      const ct = res.headers.get('content-type') || '';
+      if(ct.includes('application/json')){
+        const j = await res.json();
+        $('respBody').textContent = JSON.stringify(j, null, 2);
+        // update curl snippet
+        $('curlSnip').textContent = `curl "${proxy}"`;
+      } else if(ct.startsWith('text/') || ct.includes('application/xml') || ct.includes('html')){
+        const txt = await res.text();
+        // limit displayed length to keep mobile friendly
+        const max = 2000;
+        $('respBody').textContent = txt.length > max ? txt.slice(0, max) + '\n\n...(truncated)' : txt;
+        $('curlSnip').textContent = `curl "${proxy}"`;
+      } else {
+        // binary / file - show info
+        const blob = await res.blob();
+        const sizeKB = Math.round((blob.size||0)/1024);
+        $('respBody').textContent = `Response is binary/file — type: ${blob.type || 'unknown'}, size: ${sizeKB} KB\n\n(Use curl or open in new tab to download)`;
+        $('curlSnip').textContent = `curl -L "${proxy}" --output output.bin`;
+      }
+    } catch(err){
+      $('respStatus').textContent = 'Jaringan Error';
+      $('respStatus').style.background = 'var(--warn)';
+      $('respInfo').textContent = err.message || 'Fetch error';
+      $('respBody').textContent = 'Gagal menghubungi proxy. Pastikan endpoint /api/botchax tersedia dan domain sama origin (atau CORS diperbolehkan).';
+      console.warn('tryBypass error', err);
+    }
+  }
+
+  // --- Copy proxy URL ---
+  function copyProxyUrl(){
     const target = $('targetUrl').value.trim();
     if(!target) return alert('Masukkan URL target dulu');
     const proxy = getProxyUrl(target);
-    try {
-      await navigator.clipboard.writeText(proxy);
-      // update snippets
-      $('curlBox').textContent = `curl "${proxy}"`;
-      $('fetchBox').textContent =
-`fetch('${proxy}')
-  .then(r => r.blob())
-  .then(blob => { /* handle file */ })`;
+    navigator.clipboard.writeText(proxy).then(()=>{
+      // update curl snippet
+      $('curlSnip').textContent = `curl "${proxy}"`;
       alert('URL proxy disalin ke clipboard');
-    } catch(e){
-      alert('Gagal salin: ' + e);
-    }
-  });
+    }).catch(e=>{
+      alert('Gagal menyalin: ' + e);
+    });
+  }
 
-  // update snippets on input change (live)
-  $('targetUrl').addEventListener('input', () => {
-    const target = $('targetUrl').value.trim();
-    const proxy = getProxyUrl(target || 'https://api.botcahx.eu.org/api/download/storyanime?apikey=');
-    $('curlBox').textContent = `curl "${proxy}"`;
-    $('fetchBox').textContent = 
-`fetch('${proxy}')
-  .then(r => r.blob())
-  .then(blob => { /* handle file */ })`;
+  // --- Init ---
+  loadClientIp();
+  loadBattery();
+  fetchLimit();
+  setInterval(fetchLimit, 10000);
+
+  // events
+  $('testBtn').addEventListener('click', tryBypass);
+  $('copyBtn').addEventListener('click', copyProxyUrl);
+
+  // live update curl snippet on input change
+  $('targetUrl').addEventListener('input', ()=>{
+    const v = $('targetUrl').value.trim() || 'https://api.botcahx.eu.org/api/download/storyanime?apikey=';
+    $('curlSnip').textContent = `curl "${getProxyUrl(v)}"`;
   });
 </script>
+
 </body>
 </html>
