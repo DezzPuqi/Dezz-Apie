@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 // Konfigurasi langsung di sini (tanpa setting.js)
 const supabaseUrl = "https://cyrbmfpciecmqolrkrlg.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // ganti pakai key lu
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiZ3N1YWZ4cHd4dWhhZ29va3RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3NTAzNzYsImV4cCI6MjA3MzMyNjM3Nn0.H91UP4fHTkQHcaE9pUmOlGuhHGUyYNc6rt-4cHrDZqU"; // ganti pakai key lu
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
