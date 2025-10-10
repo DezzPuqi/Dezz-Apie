@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Snippet ke Supabase</title>
+  <style>
+    body { font-family: Arial; background: #f4f4f9; padding: 20px; }
+    input, textarea, button { width: 100%; margin: 6px 0; padding: 10px; font-size: 15px; }
+    button { background: #ff61b2; color: white; border: none; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>🩷 Upload Snippet API Test</h2>
+
+  <input type="text" id="title" placeholder="Judul Snippet">
+  <input type="text" id="language" placeholder="Bahasa (js, py, html, dll)">
+  <textarea id="description" placeholder="Deskripsi (opsional)"></textarea>
+  <textarea id="code" placeholder="Isi kode"></textarea>
+  <button onclick="uploadSnippet()">Upload</button>
+
+  <pre id="result"></pre>
+
+  <script>
+    async function uploadSnippet() {
+      const title = document.getElementById('title').value.trim();
+      const language = document.getElementById('language').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const code = document.getElementById('code').value.trim();
+
+      if (!title || !language || !code) {
+        alert('Title, Language, dan Code wajib diisi!');
+        return;
+      }
+
+      const res = await fetch("https://dezz-apie.vercel.app/api/upload-snippet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, language, description, code }),
+      });
+
+      const data = await res.json();
+      document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
