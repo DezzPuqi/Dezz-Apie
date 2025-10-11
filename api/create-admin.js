@@ -1,23 +1,39 @@
+// File: /api/create-admin.js
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
+  if (req.method === "GET") {
+    return res.status(200).json({
+      success: true,
+      message: "Endpoint aktif, gunakan POST dengan { username } untuk membuat admin",
+    });
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ success: false, message: "Method not allowed" });
   }
 
-  // === KONFIGURASI ===
-  const PANEL_URL = "https://madamdezz.resellergaming-official.my.id"; // ganti ke domain panel lu
-  const API_KEY = "ptla_SqvSBV441RLgP9G0bvsEnvuDPcIceHKOIvteUsmkk5r"; // API key admin utama Pterodactyl
+  // === KONFIGURASI (langsung diisi, tanpa env) ===
+  const PANEL_URL = "https://madamdezz.resellergaming-official.my.id";
+  const API_KEY = "ptla_SqvSBV441RLgP9G0bvsEnvuDPcIceHKOIvteUsmkk5r";
 
   try {
-    const { username, email, first_name, last_name, password } = req.body;
+    const { username } = req.body;
 
-    // validasi input
-    if (!username || !email || !first_name || !last_name || !password) {
-      return res.status(400).json({ success: false, message: "Data tidak lengkap!" });
+    if (!username) {
+      return res.status(400).json({ success: false, message: "Username wajib diisi!" });
     }
 
-    // buat user via Pterodactyl API
+    // Generate password: Username + 2 angka random
+    const randomNumber = Math.floor(Math.random() * 90 + 10); // 10-99
+    const password = `${username}${randomNumber}`;
+
+    // Default email & name
+    const email = `${username}@dezzhost.my.id`;
+    const first_name = "Admin";
+    const last_name = "User";
+
+    // Buat user via Pterodactyl API
     const response = await fetch(`${PANEL_URL}/api/application/users`, {
       method: "POST",
       headers: {
@@ -31,25 +47,35 @@ export default async function handler(req, res) {
         first_name,
         last_name,
         password,
-        root_admin: true, // ini bikin akun jadi admin
+        root_admin: true,
         language: "en",
       }),
     });
 
-    const data = await response.json();
+    // parse body (may throw)
+    const data = await response.json().catch(() => null);
 
     if (!response.ok) {
       return res.status(400).json({
         success: false,
         message: "Gagal membuat akun admin!",
-        error: data.errors || data,
+        error: data?.errors || data || { status: response.status, statusText: response.statusText },
       });
     }
+
+    // Coba ambil atribut yang umum, fallback ke data kalau struktur beda
+    const userAttrs = (data && data.attributes) ? data.attributes : data;
 
     res.status(200).json({
       success: true,
       message: "Akun admin berhasil dibuat!",
-      user: data.attributes,
+      user: {
+        username: userAttrs?.username || username,
+        password: password,
+        email: userAttrs?.email || email,
+        id: userAttrs?.id || null,
+        raw: userAttrs || data || null,
+      },
     });
 
   } catch (err) {
