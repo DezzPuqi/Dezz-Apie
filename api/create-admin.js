@@ -6,8 +6,8 @@ export default async function handler(req, res) {
   }
 
   // === KONFIGURASI ===
-  const PANEL_URL = "https://panel.dezzhost.my.id"; // ganti ke domain panel lu
-  const API_KEY = "ptla_xxxxxxxxxxxxxxxxxxx"; // API key admin utama Pterodactyl
+  const PANEL_URL = "https://madamdezz.resellergaming-official.my.id"; // ganti ke domain panel lu
+  const API_KEY = "ptla_SqvSBV441RLgP9G0bvsEnvuDPcIceHKOIvteUsmkk5r"; // API key admin utama Pterodactyl
 
   try {
     const { username, email, first_name, last_name, password } = req.body;
